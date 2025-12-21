@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thí Nghiệm Ảo: Định Luật Boyle - Vật Lí 11</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Times+New+Roman:ital,wght@0,400;0,700;1,400&display=swap');
+
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            /* TÔNG NỀN MÀU VÀNG NHẠT */
+            background-color: #fefce8;
+            background-image: linear-gradient(120deg, #fefce8 0%, #fef9c3 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        /* --- STYLES CHO PHÒNG THÍ NGHIỆM --- */
+        .lab-background {
+            background-color: #ffffff;
+            background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+            background-size: 20px 20px;
+            border: 4px solid #fff;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* MÔ PHỎNG XI LANH (SYRINGE) */
+        .cylinder-glass {
+            background: linear-gradient(to right, rgba(255,255,255,0.9) 0%, rgba(241,245,249,0.5) 50%, rgba(255,255,255,0.9) 100%);
+            border: 3px solid #334155;
+            border-radius: 6px;
+            box-shadow: 
+                inset 8px 0 10px rgba(0,0,0,0.1), 
+                inset -8px 0 10px rgba(0,0,0,0.1),
+                0 0 0 1px rgba(255,255,255,0.8),
+                5px 5px 15px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+            z-index: 10;
+        }
+
+        /* Styles cho các loại vạch chia */
+        .mark-line {
+            position: absolute;
+            right: 0;
+            background-color: #1e293b;
+            z-index: 20;
+        }
+        .mark-main { /* Vạch chính (1, 2, 3...) */
+            width: 25px; /* Dài hơn */
+            height: 3px; /* Đậm hơn */
+            background-color: #0f172a;
+        }
+        .mark-sub { /* Vạch 0.5 */
+            width: 15px;
+            height: 2px;
+            background-color: #334155;
+        }
+        .mark-minor { /* Vạch 0.1 */
+            width: 8px;
+            height: 1px;
+            background-color: #64748b;
+        }
+        
+        .mark-text {
+            position: absolute;
+            right: 30px;
+            font-size: 20px;
+            font-weight: 900; /* In đậm */
+            color: #0f172a;
+            transform: translateY(-50%);
+            font-family: Arial, sans-serif;
+            z-index: 20;
+            text-shadow: 1px 1px 0px rgba(255,255,255,0.8);
+        }
+
+        .piston {
+            background: linear-gradient(to bottom, #ef4444, #dc2626);
+            height: 24px;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: top 0.3s ease-out;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            z-index: 15;
+            border-bottom: 1px solid #991b1b;
+        }
+
+        .piston-rod {
+            width: 18px; 
+            height: 450px; 
+            background: linear-gradient(to right, #64748b, #cbd5e1, #64748b);
+            margin: 0 auto;
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 1px solid #475569;
+            border-right: 1px solid #475569;
+        }
+
+        /* ÁP KẾ */
+        .gauge-dial {
+            background: white;
+            border: 6px solid #1e293b;
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 20;
+        }
+
+        .gauge-needle {
+            width: 3px;
+            height: 45%;
+            background: #dc2626;
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            transform-origin: bottom center;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 2px;
+            z-index: 30;
+        }
+
+        /* Table & UI Styles */
+        .data-table th, .data-table td {
+            border: 1px solid #e2e8f0;
+            padding: 8px;
+            text-align: center;
+        }
+        .data-table th { background-color: #fefce8; color: #854d0e; font-weight: bold; }
+        .data-table tr:nth-child(even) { background-color: #fcfcfc; }
+
+        .btn-science {
+            background: linear-gradient(to bottom right, #3b82f6, #2563eb);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.5);
+            transition: all 0.2s;
+        }
+        .btn-science:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px -1px rgba(59, 130, 246, 0.6);
+            background: linear-gradient(to bottom right, #2563eb, #1d4ed8);
+        }
+        .btn-science:disabled {
+            background: #e2e8f0;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            color: #94a3b8;
+        }
+
+        /* Tab Styles */
+        .tab-btn {
+            padding: 12px; font-weight: bold; color: #a16207;
+            border-bottom: 3px solid transparent; transition: all 0.3s;
+            text-transform: uppercase; font-size: 0.85rem; flex: 1; text-align: center;
+            background-color: #fffbeb;
+            border-top: 1px solid rgba(234, 179, 8, 0.1); border-right: 1px solid rgba(234, 179, 8, 0.1);
+        }
+        .tab-btn:hover { background-color: #fef3c7; color: #dc2626; }
+        .tab-active {
+            color: #ffffff !important; border-bottom-color: #dc2626;
+            background-color: #dc2626 !important; border-top: 3px solid #b91c1c;
+            box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.3);
+        }
+        .tab-content { display: none; animation: fadeIn 0.4s ease; }
+        .tab-content.active { display: block; }
+        
+        .guide-box {
+            transition: all 0.3s ease; border-left: 5px solid #eab308;
+            background: linear-gradient(to right, #fefce8, #fffbeb);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="p-4 flex flex-col items-center">
+
+    <!-- Header -->
+    <header class="w-full max-w-7xl mb-6 flex justify-between items-center bg-white p-5 rounded-xl shadow-lg border border-yellow-100 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-yellow-50 rounded-full -mr-16 -mt-16 z-0 pointer-events-none"></div>
+        <div class="relative z-10">
+            <h1 class="text-3xl font-bold text-slate-900 uppercase tracking-tight bg-yellow-300 px-3 py-1 rounded-lg inline-block shadow-sm transform -rotate-1 border border-yellow-400">Thí Nghiệm Định Luật Boyle</h1>
+            <p class="text-slate-500 font-medium mt-2 ml-1">Vật lí 11 - Kết nối tri thức</p>
+        </div>
+        <div class="flex items-center gap-4 relative z-10">
+            <div class="bg-red-50 px-4 py-2 rounded-lg border border-red-100 flex items-center gap-3 shadow-sm">
+                <span class="text-3xl">🌡️</span>
+                <div>
+                    <div class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Nhiệt độ (T)</div>
+                    <div class="font-bold text-xl text-red-600">300 K (Const)</div>
+                </div>
+            </div>
+            <button onclick="toggleAudio()" id="audioBtn" class="text-sm font-bold text-slate-600 hover:text-blue-600 bg-slate-50 hover:bg-blue-50 border border-slate-200 px-4 py-2 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
+                <span>🔊</span> Âm thanh: Bật
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Grid -->
+    <div class="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- CỘT TRÁI: MÔ PHỎNG -->
+        <div class="lg:col-span-4 flex flex-col gap-4 sticky top-4">
+            <div id="simulationContainer" class="lab-background p-0 h-[600px] flex flex-col items-center relative border-yellow-100 bg-gray-50">
+                
+                <!-- SVG cho dây nối -->
+                <svg id="tubeSvg" class="absolute top-0 left-0 w-full h-full pointer-events-none" style="z-index: 5;">
+                    <path id="tubePath" d="" fill="none" stroke="#64748b" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path id="tubeShadow" d="" fill="none" stroke="#94a3b8" stroke-width="8" stroke-opacity="0.2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+
+                <!-- Áp kế (Top 280) -->
+                <div class="absolute top-[280px] right-8 flex flex-col items-center z-20">
+                    <div class="gauge-dial w-28 h-28 flex items-center justify-center bg-white shadow-xl relative">
+                        <div class="absolute w-full h-full rounded-full border-2 border-gray-200"></div>
+                        <!-- Vạch chia -->
+                        <div class="absolute w-[90%] h-[90%] rounded-full border border-dashed border-gray-300"></div>
+                        
+                        <div class="absolute bottom-6 font-mono font-bold text-xl text-slate-800 tracking-tighter" id="pressureDisplay">1.00</div>
+                        <div class="absolute bottom-2 text-[10px] font-bold text-slate-400">x10⁵ Pa</div>
+                        <div class="gauge-needle h-[45%] w-[3px] shadow-sm" id="gaugeNeedle"></div>
+                        <div class="w-3 h-3 bg-slate-800 rounded-full absolute z-10 shadow-md border-2 border-white"></div>
+                        
+                        <!-- Đầu nối dây áp kế -->
+                        <div id="gaugeConnector" class="absolute -bottom-[4px] left-1/2 -translate-x-1/2 w-4 h-4"></div>
+                    </div>
+                    <div class="text-[10px] font-bold mt-2 bg-slate-800 text-white px-2 py-0.5 rounded-full shadow-lg uppercase tracking-wide">Áp kế</div>
+                </div>
+
+                <!-- Xi lanh (Kích thước lớn hơn: w-40, h-400) -->
+                <div class="absolute left-8 bottom-10 flex flex-col items-center z-10">
+                    <!-- Thân xi lanh -->
+                    <div class="cylinder-glass w-40 h-[400px] relative bg-white/90 border-slate-400">
+                        <!-- Piston (Di chuyển) -->
+                        <div class="piston" id="pistonVisual">
+                            <div class="piston-rod"></div>
+                            <!-- Vân piston -->
+                            <div class="w-full h-[2px] bg-red-800/30 absolute top-2"></div>
+                            <div class="w-full h-[2px] bg-red-800/30 absolute bottom-2"></div>
+                        </div>
+                        
+                        <!-- Khí (Canvas) -->
+                        <canvas id="gasCanvas" width="160" height="400" class="absolute bottom-0 left-0 w-full"></canvas>
+                        
+                        <!-- Vạch chia độ (Container để JS vẽ vào) -->
+                        <div id="ruler-container" class="absolute top-0 right-0 h-full w-full pointer-events-none">
+                            <!-- JS sẽ tạo các vạch chia vào đây -->
+                        </div>
+                    </div>
+                    
+                    <!-- Đầu vòi xi lanh -->
+                    <div id="syringeNozzle" class="w-10 h-3 bg-gray-400 rounded-b border-x-2 border-b-2 border-gray-500 shadow-sm relative z-20"></div>
+                    
+                    <div class="text-lg font-bold mt-2 text-slate-700">Xi lanh</div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- CỘT PHẢI: TAB VÀ NỘI DUNG -->
+        <div class="lg:col-span-8 flex flex-col shadow-xl rounded-xl overflow-hidden border border-yellow-100">
+            <div class="flex bg-yellow-50 pt-2 px-2 gap-1">
+                <button onclick="switchTab(1)" id="tab-1" class="tab-btn tab-active rounded-t-lg">Bước 1: Đo đạc</button>
+                <button onclick="switchTab(2)" id="tab-2" class="tab-btn rounded-t-lg">Bước 2: Tính toán</button>
+                <button onclick="switchTab(3)" id="tab-3" class="tab-btn rounded-t-lg">Bước 3: Đồ thị</button>
+            </div>
+
+            <div class="bg-white p-6 min-h-[550px] flex flex-col gap-6 relative">
+                
+                <div id="dynamic-guide" class="guide-box p-4 rounded-lg border border-yellow-200">
+                    <h3 class="font-bold text-yellow-800 text-base flex items-center gap-2">
+                        <span class="text-xl bg-yellow-400 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-sm">1</span> 
+                        <span id="guide-title">Hướng dẫn Bước 1</span>
+                    </h3>
+                    <p class="text-slate-700 mt-2 ml-10 text-base leading-relaxed" id="guide-content">
+                        Kéo thanh trượt để thay đổi thể tích (V), quan sát áp kế rồi nhấn <b>"Ghi số liệu"</b>. Thực hiện ít nhất 5 lần đo khác nhau.
+                    </p>
+                </div>
+
+                <div id="content-1" class="tab-content active h-full flex flex-col gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 flex flex-col justify-center shadow-inner">
+                            <label class="font-bold text-slate-700 mb-3 flex justify-between items-end">
+                                <span>Thể tích (V):</span> 
+                                <span id="volumeDisplay" class="text-blue-600 font-mono text-2xl font-black bg-white px-2 py-1 rounded shadow-sm border border-blue-100">3.0 cm³</span>
+                            </label>
+                            
+                            <!-- Slider cập nhật max 5.5 -->
+                            <div class="relative h-10 w-full mb-6 flex items-center">
+                                <input type="range" id="volumeSlider" min="1.0" max="5.5" step="0.1" value="3.0" 
+                                    class="w-full h-3 bg-gray-200 rounded-full appearance-none cursor-pointer accent-blue-600 z-10"
+                                    oninput="updateSimulation(this.value)" onchange="playPistonSound()">
+                                <!-- Vạch chia slider -->
+                                <div class="absolute w-full flex justify-between px-1 text-[10px] text-gray-400 -bottom-5 font-bold font-mono">
+                                    <span>1.0</span><span>2.0</span><span>3.0</span><span>4.0</span><span>5.0</span><span>5.5</span>
+                                </div>
+                            </div>
+                            
+                            <button onclick="recordData()" class="btn-science py-3 rounded-lg font-bold text-sm uppercase tracking-wide flex items-center justify-center gap-2 text-white">
+                                <span class="text-lg">📝</span> Ghi số liệu (p, V)
+                            </button>
+                        </div>
+                        
+                        <div class="flex items-center justify-center bg-blue-50/50 rounded-xl border border-blue-100 flex-col py-4 relative overflow-hidden group">
+                            <div class="absolute -right-4 -top-4 w-24 h-24 bg-blue-100 rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
+                            <span class="text-slate-500 text-xs font-bold uppercase tracking-widest z-10">Số lần đo</span>
+                            <span class="text-5xl font-black text-blue-600 my-2 z-10 drop-shadow-sm" id="dataCount">0</span>
+                            <span class="text-xs text-blue-500 font-bold bg-white px-2 py-1 rounded-full shadow-sm z-10 border border-blue-100">Tối thiểu 5</span>
+                        </div>
+                    </div>
+
+                    <div class="flex-grow overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+                        <table class="w-full data-table">
+                            <thead>
+                                <tr class="bg-yellow-50 text-slate-700 uppercase text-xs tracking-wider">
+                                    <th class="py-3">Lần</th>
+                                    <th class="py-3">V (cm³)</th>
+                                    <th class="py-3">p (10⁵ Pa)</th>
+                                    <th class="py-3 text-slate-400">p · V</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody1">
+                                <tr><td colspan="4" class="text-center py-8 text-slate-400 italic">Chưa có dữ liệu</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="content-2" class="tab-content h-full flex flex-col gap-6">
+                    <div>
+                        <button onclick="calculatePV()" id="btnCalcPV" class="btn-science w-full py-4 rounded-xl font-bold text-lg uppercase tracking-wide shadow-lg hover:shadow-xl transition-all flex justify-center items-center gap-3">
+                            <span class="text-2xl">🔢</span> Tính tích p·V ngay
+                        </button>
+                    </div>
+
+                    <div class="flex-grow overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+                        <table class="w-full data-table">
+                            <thead>
+                                <tr class="bg-yellow-50 text-slate-700 uppercase text-xs tracking-wider">
+                                    <th class="py-3">Lần</th>
+                                    <th class="py-3">V (cm³)</th>
+                                    <th class="py-3">p (10⁵ Pa)</th>
+                                    <th class="py-3 text-blue-700 font-bold bg-blue-50">p · V</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody2">
+                                <tr><td colspan="5" class="text-center py-8 text-slate-400 italic">Vui lòng thực hiện Bước 1 trước</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-right">
+                        <button onclick="clearData()" class="text-xs font-bold text-red-500 hover:text-red-700 hover:underline flex items-center justify-end gap-1 ml-auto">
+                            <span>🗑️</span> Xóa dữ liệu làm lại
+                        </button>
+                    </div>
+                </div>
+
+                <div id="content-3" class="tab-content h-full flex flex-col gap-6">
+                    <button onclick="showGraphs()" id="btnDrawGraph" class="btn-science py-3 rounded-lg font-bold text-sm uppercase tracking-wide shadow-md">
+                        📈 Vẽ đồ thị kết quả
+                    </button>
+
+                    <div id="graphsContainer" class="hidden grid grid-cols-2 gap-6 flex-grow">
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 flex flex-col h-[300px] shadow-sm hover:shadow-md transition-shadow">
+                            <h4 class="text-center font-bold text-blue-800 text-xs uppercase mb-2 bg-blue-50 py-1 rounded">Đồ thị p theo V</h4>
+                            <div class="flex-grow relative w-full">
+                                <canvas id="chartPV"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 flex flex-col h-[300px] shadow-sm hover:shadow-md transition-shadow">
+                            <h4 class="text-center font-bold text-green-800 text-xs uppercase mb-2 bg-green-50 py-1 rounded">Đồ thị p theo 1/V</h4>
+                            <div class="flex-grow relative w-full">
+                                <canvas id="chartP1V"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="graphPlaceholder" class="flex-grow flex items-center justify-center bg-slate-50 rounded-xl border-2 border-dashed border-slate-300 min-h-[250px] group">
+                        <div class="text-center text-slate-400 group-hover:text-blue-500 transition-colors">
+                            <div class="text-5xl mb-3 opacity-50">📊</div>
+                            <p class="font-medium">Đồ thị sẽ hiện ở đây</p>
+                            <p class="text-xs mt-1">Hoàn thành tính toán để vẽ</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Logic -->
+    <script>
+        const K_CONST = 3.0; 
+        
+        let experimentData = [];
+        let particles = [];
+        let audioCtx = null;
+        let isAudioEnabled = true;
+        let isCalculated = false;
+
+        const slider = document.getElementById('volumeSlider');
+        const displayV = document.getElementById('volumeDisplay');
+        const displayP = document.getElementById('pressureDisplay');
+        const pistonVisual = document.getElementById('pistonVisual');
+        const needle = document.getElementById('gaugeNeedle');
+        const canvas = document.getElementById('gasCanvas');
+        const ctx = canvas.getContext('2d');
+        const dataCountLabel = document.getElementById('dataCount');
+        const guideTitle = document.getElementById('guide-title');
+        const guideContent = document.getElementById('guide-content');
+        
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        function toggleAudio() {
+            isAudioEnabled = !isAudioEnabled;
+            const btn = document.getElementById('audioBtn');
+            btn.innerHTML = isAudioEnabled ? "<span>🔊</span> Âm thanh: Bật" : "<span>🔇</span> Âm thanh: Tắt";
+            btn.classList.toggle('text-blue-600');
+            btn.classList.toggle('text-slate-600');
+            if (isAudioEnabled && !audioCtx) initAudio();
+        }
+
+        function playPistonSound() {
+            if (!isAudioEnabled || !audioCtx) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const bufferSize = audioCtx.sampleRate * 0.15; 
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 800;
+            const gainNode = audioCtx.createGain();
+            // Âm thanh to hơn (0.3)
+            gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+            noise.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            noise.start();
+        }
+
+        function playClickSound() {
+            if (!isAudioEnabled || !audioCtx) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.1);
+
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        function switchTab(tabIndex) {
+            playClickSound(); // Âm thanh khi chuyển tab
+            
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
+            document.getElementById(`tab-${tabIndex}`).classList.add('tab-active');
+
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(`content-${tabIndex}`).classList.add('active');
+            
+            updateGuide(tabIndex);
+
+            if(tabIndex === 1) renderTable1();
+            if(tabIndex === 2) renderTable2();
+        }
+
+        function updateGuide(step) {
+            let title = "";
+            let content = "";
+            let stepNum = step;
+
+            if (step === 1) {
+                title = "Hướng dẫn Bước 1";
+                content = "Kéo thanh trượt để thay đổi thể tích (V), quan sát áp kế rồi nhấn <b>'Ghi số liệu'</b>. Thực hiện ít nhất 5 lần đo khác nhau.";
+            } else if (step === 2) {
+                title = "Hướng dẫn Bước 2";
+                content = "Nhấn nút <b>'Tính p·V'</b> để hệ thống tự động tính tích áp suất và thể tích cho các lần đo đã thực hiện.";
+            } else if (step === 3) {
+                title = "Hướng dẫn Bước 3";
+                content = "Nhấn nút <b>'Vẽ đồ thị kết quả'</b> bên dưới để vẽ đồ thị biểu diễn mối quan hệ giữa p và V.";
+            }
+
+            document.querySelector('#dynamic-guide span:first-child').innerText = stepNum;
+            guideTitle.innerText = title;
+            guideContent.innerHTML = content;
+        }
+
+        // --- DYNAMIC RULER CREATION (Updated max to 5.5) ---
+        function createRuler() {
+            const container = document.getElementById('ruler-container');
+            container.innerHTML = '';
+            
+            // Total height 400px.
+            // Range 0 to 5.5 volume (Extended further)
+            const maxVol = 5.5;
+            
+            // Iterate from 0 to 55 (0.0 to 5.5)
+            for (let v = 0; v <= 55; v++) {
+                const vol = v / 10.0; // 0.0, 0.1...
+                
+                // Calculate Y position
+                // At vol=5.5 -> y=0. At vol=0.0 -> y=400.
+                const y = ((maxVol - vol) / maxVol) * 400;
+                
+                const div = document.createElement('div');
+                div.classList.add('mark-line');
+                div.style.top = `${y}px`;
+                
+                if (v % 10 === 0) {
+                    // Main mark (1.0, 2.0...)
+                    if (vol >= 1.0) { 
+                        div.classList.add('mark-main');
+                        
+                        const text = document.createElement('div');
+                        text.classList.add('mark-text');
+                        text.style.top = `${y}px`;
+                        
+                        if (vol >= 4.9) { 
+                            text.style.transform = 'translateY(0%)'; 
+                            text.style.top = `${y + 2}px`;
+                        }
+                        
+                        text.innerText = vol.toFixed(0);
+                        container.appendChild(text);
+                    } else {
+                        div.classList.add('mark-main');
+                    }
+                } else if (v % 5 === 0) {
+                    // 0.5 mark
+                    if (vol > 0.5) div.classList.add('mark-sub');
+                } else {
+                    // 0.1 mark
+                    if (vol > 0.5) div.classList.add('mark-minor');
+                }
+                
+                if (vol >= 0.5) { 
+                    container.appendChild(div);
+                }
+            }
+        }
+
+        // --- TUBE DRAWING LOGIC ---
+        function drawTube() {
+            const container = document.getElementById('simulationContainer');
+            const startElem = document.getElementById('syringeNozzle');
+            const endElem = document.getElementById('gaugeConnector');
+            const tubePath = document.getElementById('tubePath');
+            const tubeShadow = document.getElementById('tubeShadow');
+
+            if (!container || !startElem || !endElem) return;
+
+            const cRect = container.getBoundingClientRect();
+            const sRect = startElem.getBoundingClientRect();
+            const eRect = endElem.getBoundingClientRect();
+
+            // Start: Bottom center of Syringe Nozzle
+            const x1 = sRect.left + sRect.width / 2 - cRect.left;
+            const y1 = sRect.bottom - cRect.top;
+
+            // End: Bottom center of Gauge Connector (aligns with Gauge border)
+            const x2 = eRect.left + eRect.width / 2 - cRect.left;
+            const y2 = eRect.top + eRect.height / 2 - cRect.top;
+
+            // Define path parameters
+            const bottomLevel = cRect.height - 30; // Level for horizontal segment (near floor)
+            const cornerRadius = 20;
+
+            // Construct Squared Path with Rounded Corners
+            const d = `
+                M ${x1} ${y1}
+                L ${x1} ${bottomLevel - cornerRadius}
+                Q ${x1} ${bottomLevel} ${x1 + cornerRadius} ${bottomLevel}
+                L ${x2 - cornerRadius} ${bottomLevel}
+                Q ${x2} ${bottomLevel} ${x2} ${bottomLevel - cornerRadius}
+                L ${x2} ${y2}
+            `;
+
+            tubePath.setAttribute('d', d);
+            tubeShadow.setAttribute('d', d);
+        }
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                this.radius = 3;
+            }
+            update(pistonY, pressureMultiplier) {
+                const speedFactor = 1 + (pressureMultiplier * 0.2); 
+                this.x += this.vx * speedFactor;
+                this.y += this.vy * speedFactor;
+                if (this.x < this.radius || this.x > canvas.width - this.radius) this.vx *= -1;
+                if (this.y > canvas.height - this.radius) this.vy *= -1;
+                if (this.y < pistonY + this.radius) { this.y = pistonY + this.radius; this.vy *= -1; }
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = "#ea580c"; 
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            // Increased from 40 to 200 for even denser gas
+            for(let i=0; i<200; i++) particles.push(new Particle());
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const currentV = parseFloat(slider.value);
+            // Updated height logic: 400px max height, 5.5 max vol
+            const gasHeight = (currentV / 5.5) * 400; 
+            const pistonY = 400 - gasHeight; 
+            const pressure = K_CONST / currentV;
+
+            particles.forEach(p => {
+                p.update(pistonY, pressure);
+                p.draw();
+            });
+            requestAnimationFrame(animateParticles);
+        }
+
+        function updateSimulation(val) {
+            const V = parseFloat(val);
+            const p = K_CONST / V;
+
+            displayV.innerText = V.toFixed(1) + " cm³";
+            displayP.innerText = p.toFixed(2);
+
+            // Updated percentTop for 5.5 max
+            const percentTop = (1 - (V / 5.5)) * 100;
+            pistonVisual.style.top = `${percentTop}%`;
+
+            const angle = ((p / 3.0) * 240) - 120;
+            needle.style.transform = `translateX(-50%) rotate(${angle}deg)`;
+        }
+
+        function recordData() {
+            const V = parseFloat(slider.value);
+            const p = K_CONST / V;
+            const pShow = parseFloat(p.toFixed(2));
+            
+            if (experimentData.some(d => d.v === V)) {
+                alert("Đã ghi số liệu cho V = " + V + " cm³");
+                return;
+            }
+
+            if (isCalculated) {
+                isCalculated = false;
+                experimentData.forEach(d => d.pv = null);
+                document.getElementById('graphsContainer').classList.add('hidden');
+                document.getElementById('graphPlaceholder').classList.remove('hidden');
+            }
+
+            experimentData.push({ v: V, p: pShow, pv: null });
+            experimentData.sort((a, b) => a.v - b.v);
+
+            renderTable1();
+            dataCountLabel.innerText = experimentData.length;
+        }
+
+        function calculatePV() {
+            if(experimentData.length < 5) {
+                alert("Cần ít nhất 5 lần đo! Vui lòng quay lại Bước 1.");
+                switchTab(1);
+                return;
+            }
+            experimentData.forEach(d => {
+                d.pv = parseFloat((d.p * d.v).toFixed(2));
+            });
+            isCalculated = true;
+            renderTable2();
+        }
+
+        function renderTable1() {
+            const tbody = document.getElementById('tableBody1');
+            tbody.innerHTML = "";
+            if (experimentData.length === 0) {
+                 tbody.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-slate-400 italic">Chưa có dữ liệu</td></tr>`;
+                 return;
+            }
+            experimentData.forEach((d, index) => {
+                const row = `
+                    <tr class="hover:bg-blue-50 border-b border-slate-100 transition-colors">
+                        <td class="font-bold text-slate-500">${index + 1}</td>
+                        <td class="font-bold text-blue-700">${d.v.toFixed(1)}</td>
+                        <td class="font-mono text-slate-800">${d.p.toFixed(2)}</td>
+                        <td class="text-slate-300 select-none">---</td>
+                    </tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+
+        function renderTable2() {
+            const tbody = document.getElementById('tableBody2');
+            tbody.innerHTML = "";
+            if (experimentData.length === 0) {
+                 tbody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-slate-400 italic">Chưa có dữ liệu</td></tr>`;
+                 return;
+            }
+            experimentData.forEach((d, index) => {
+                const pvDisplay = d.pv !== null ? d.pv : '<span class="text-slate-300 font-bold">?</span>';
+                const row = `
+                    <tr class="hover:bg-blue-50 border-b border-slate-100 transition-colors">
+                        <td class="font-bold text-slate-500">${index + 1}</td>
+                        <td class="font-bold text-blue-700">${d.v.toFixed(1)}</td>
+                        <td class="font-mono text-slate-800">${d.p.toFixed(2)}</td>
+                        <td class="font-bold text-red-600 font-mono bg-blue-50/50">${pvDisplay}</td>
+                        <td><button onclick="removeRow(${index})" class="text-slate-400 hover:text-red-500 font-bold px-2 transition-colors">&times;</button></td>
+                    </tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+
+        function removeRow(index) {
+            experimentData.splice(index, 1);
+            if(experimentData.length === 0) isCalculated = false;
+            renderTable2();
+            dataCountLabel.innerText = experimentData.length;
+        }
+
+        function clearData() {
+            if(confirm("Xóa toàn bộ số liệu?")) {
+                experimentData = [];
+                isCalculated = false;
+                dataCountLabel.innerText = "0";
+                renderTable1();
+                renderTable2();
+                document.getElementById('graphsContainer').classList.add('hidden');
+                document.getElementById('graphPlaceholder').classList.remove('hidden');
+                switchTab(1);
+            }
+        }
+
+        let chart1, chart2;
+
+        function showGraphs() {
+            if(!isCalculated || experimentData.length < 5) {
+                alert("Cần ít nhất 5 điểm dữ liệu và đã tính p·V (Bước 2) để vẽ đồ thị.");
+                return;
+            }
+            
+            document.getElementById('graphsContainer').classList.remove('hidden');
+            document.getElementById('graphPlaceholder').classList.add('hidden');
+
+            const ctx1 = document.getElementById('chartPV').getContext('2d');
+            const ctx2 = document.getElementById('chartP1V').getContext('2d');
+
+            const dataPV = experimentData.map(d => ({x: d.v, y: d.p}));
+            const dataP1V = experimentData.map(d => ({x: parseFloat((1/d.v).toFixed(4)), y: d.p}));
+
+            if (chart1) chart1.destroy();
+            if (chart2) chart2.destroy();
+
+            Chart.defaults.font.family = "'Times New Roman', Times, serif";
+            Chart.defaults.color = '#334155';
+            
+            chart1 = new Chart(ctx1, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Thực nghiệm',
+                        data: dataPV,
+                        backgroundColor: '#ef4444',
+                        borderColor: '#3b82f6',
+                        showLine: true,
+                        tension: 0.4,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { type: 'linear', position: 'bottom', title: { display: true, text: 'V (cm³)', font: {weight: 'bold'} }, min: 0 },
+                        y: { title: { display: true, text: 'p (10⁵ Pa)', font: {weight: 'bold'} }, min: 0 }
+                    }
+                }
+            });
+
+            chart2 = new Chart(ctx2, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Thực nghiệm',
+                        data: dataP1V,
+                        backgroundColor: '#16a34a',
+                        borderColor: '#16a34a',
+                        showLine: true,
+                        tension: 0,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { type: 'linear', position: 'bottom', title: { display: true, text: '1/V (1/cm³)', font: {weight: 'bold'} }, min: 0 },
+                        y: { title: { display: true, text: 'p (10⁵ Pa)', font: {weight: 'bold'} }, min: 0 }
+                    }
+                }
+            });
+        }
+
+        window.onload = function() {
+            initAudio();
+            initParticles();
+            createRuler(); // Draw markings
+            animateParticles();
+            updateSimulation(slider.value);
+            renderTable1();
+            updateGuide(1);
+            
+            // Draw tube and handle resize
+            drawTube();
+            window.addEventListener('resize', drawTube);
+        };
+
+    </script>
+</body>
+</html>
